@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root {
+  --paper: #EEEDE7;
+  --paper-raised: #F7F6F2;
+  --ink: #1C201B;
+  --ink-soft: #52584F;
+  --falu: #8B3327;
+  --falu-dark: #6E271D;
+  --skur-green: #33473A;
+  --tape: #F0B429;
+  --line: rgba(28, 32, 27, 0.12);
+  --radius: 4px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.mono { font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.02em; }
+
+.auth-wrap {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 90px 24px;
+}
+
+.auth-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 32px;
+}
+
+.auth-card h1 { font-size: 1.6rem; font-weight: 600; }
+.auth-card p.sub { color: var(--ink-soft); margin-top: 8px; font-size: 0.92rem; }
+
+.field { margin-top: 22px; }
+.field label { display: block; font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 8px; }
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: white;
+}
+.field input:focus { outline: 2px solid var(--falu); outline-offset: 1px; }
+
+.btn-primary {
+  width: 100%;
+  margin-top: 26px;
+  background: var(--ink);
+  color: var(--paper-raised);
+  border: none;
+  padding: 14px;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.btn-primary:hover { background: var(--falu-dark); }
+.btn-primary:disabled { opacity: 0.6; cursor: default; }
+
+.auth-switch { margin-top: 20px; font-size: 0.88rem; color: var(--ink-soft); text-align: center; }
+.auth-switch a { color: var(--falu); text-decoration: none; }
+
+.auth-message {
+  margin-top: 18px;
+  font-size: 0.85rem;
+  padding: 12px 14px;
+  border-radius: 6px;
+}
+.auth-message.error { background: rgba(139,51,39,0.08); color: var(--falu); }
+.auth-message.success { background: rgba(51,71,58,0.1); color: var(--skur-green); }

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 export async function sendMessage(formData) {
   const supabase = await createClient()
@@ -15,5 +16,6 @@ export async function sendMessage(formData) {
     body: formData.get('body'),
   })
 
-  revalidatePath('/')
+  revalidatePath('/min-side')
+  redirect('/min-side?sendt=1')
 }

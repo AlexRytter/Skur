@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import LogoutButton from './logout-button'
+import { sendMessage } from '../actions'
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })
@@ -16,13 +17,16 @@ function getStatus(startDate, endDate) {
   return { label: 'Udlejet nu', className: 'active' }
 }
 
-export default async function MinSide() {
+export default async function MinSide({ searchParams }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/login')
   }
+
+  const params = await searchParams
+  const justSent = params?.sendt === '1'
 
   const { data: bookings } = await supabase
     .from('bookings')
@@ -73,6 +77,38 @@ export default async function MinSide() {
       )}
 
       <div className="section-title">Dine beskeder</div>
+
+      {justSent && (
+        <div
+          style={{
+            background: '#e1f5ee',
+            color: '#04342c',
+            borderRadius: 8,
+            padding: '10px 14px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0f6e56', display: 'inline-block' }} />
+          Din besked er sendt
+        </div>
+      )}
+
+      <form action={sendMessage} style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+        <textarea
+          name="body"
+          placeholder="Skriv en besked til Skur..."
+          required
+          rows={3}
+          style={{ flex: 1, minWidth: 240, padding: 10 }}
+        />
+        <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '10px 20px', alignSelf: 'flex-start' }}>
+          Send
+        </button>
+      </form>
+
       {messages && messages.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {messages.map((msg) => (

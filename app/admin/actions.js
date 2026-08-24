@@ -87,3 +87,51 @@ export async function updateToolDetails(id, formData) {
   revalidatePath('/admin')
   revalidatePath('/')
 }
+export async function addToolUnit(toolId, formData) {
+  const supabase = await createClient()
+  const brand = formData.get('brand')
+  const serial_number = formData.get('serial_number') || null
+  const purchase_date = formData.get('purchase_date') || null
+  const purchase_price = formData.get('purchase_price') ? Number(formData.get('purchase_price')) : null
+
+  const prefix = brand.trim().slice(0, 2).toUpperCase()
+
+  const { data: existing } = await supabase
+    .from('tool_units')
+    .select('unit_code')
+    .ilike('unit_code', `${prefix}-%`)
+
+  let maxNum = 0
+  if (existing) {
+    for (const row of existing) {
+      const num = parseInt(row.unit_code.split('-')[1], 10)
+      if (!isNaN(num) && num > maxNum) maxNum = num
+    }
+  }
+  const unit_code = `${prefix}-${String(maxNum + 1).padStart(3, '0')}`
+
+  await supabase.from('tool_units').insert({
+    tool_id: toolId,
+    unit_code,
+    serial_number,
+    purchase_date,
+    purchase_price,
+    status: 'available',
+  })
+
+  await supabase.from('tools').update({ brand }).eq('id', toolId)
+
+  revalidatePath('/admin')
+}
+
+export async function deleteToolUnit(id) {
+  const supabase = await createClient()
+  await supabase.from('tool_units').delete().eq('id', id)
+  revalidatePath('/admin')
+}
+
+export async function updateToolUnitStatus(id, status) {
+  const supabase = await createClient()
+  await supabase.from('tool_units').update({ status }).eq('id', id)
+  revalidatePath('/admin')
+}

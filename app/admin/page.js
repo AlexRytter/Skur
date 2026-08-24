@@ -60,6 +60,7 @@ export default async function AdminPage() {
       </form>
 
       <div className="section-title">Alle værktøjer</div>
+      <hr style={{ border: 'none', borderTop: '2px solid #2c2c2a', margin: '0 0 16px' }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 48 }}>
         {tools && tools.length > 0 ? (
           tools.map((tool) => {
@@ -92,6 +93,7 @@ export default async function AdminPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 12,
+                  border: '2px solid #2c2c2a',
                 }}
               >
                 <form
@@ -218,129 +220,4 @@ export default async function AdminPage() {
                         padding: 8,
                       }}
                     >
-                      <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{unit.unit_code}</span>
-                      {unit.serial_number && <span style={{ fontSize: 12, color: '#5f5e5a' }}>SN: {unit.serial_number}</span>}
-
-                      <form
-                        action={async (formData) => {
-                          'use server'
-                          await updateToolUnitStatus(unit.id, formData.get('status'))
-                        }}
-                      >
-                        <select
-                          name="status"
-                          defaultValue={unit.status}
-                          onChange={(e) => e.target.form.requestSubmit()}
-                          style={{ padding: 6 }}
-                        >
-                          <option value="available">Ledig</option>
-                          <option value="rented">Udlejet</option>
-                          <option value="service">Til service</option>
-                          <option value="sold">Solgt</option>
-                        </select>
-                      </form>
-
-                      <form
-                        action={async () => {
-                          'use server'
-                          await deleteToolUnit(unit.id)
-                        }}
-                      >
-                        <button type="submit" style={{ color: '#993c1d', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13 }}>
-                          Slet
-                        </button>
-                      </form>
-                    </div>
-                  ))}
-
-                  <form
-                    action={async (formData) => {
-                      'use server'
-                      await addToolUnit(tool.id, formData)
-                    }}
-                    style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}
-                  >
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Mærke</label>
-                      <input name="brand" defaultValue={tool.brand || ''} required placeholder="Hilti" style={{ display: 'block', padding: 8, width: 120 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Serienummer</label>
-                      <input name="serial_number" placeholder="fra værktøjet" style={{ display: 'block', padding: 8, width: 140 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Købsdato</label>
-                      <input type="date" name="purchase_date" style={{ display: 'block', padding: 8 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Købspris</label>
-                      <input type="number" name="purchase_price" style={{ display: 'block', padding: 8, width: 100 }} />
-                    </div>
-                    <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '8px 14px' }}>
-                      Tilføj eksemplar
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )
-          })
-        ) : (
-          <div className="empty-state">Ingen værktøjer endnu.</div>
-        )}
-      </div>
-
-      <div className="section-title">Beskeder</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {messages && messages.length > 0 ? (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              style={{
-                background: '#f4efe6',
-                borderRadius: 10,
-                padding: 16,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                <strong>{msg.user_email}</strong>
-                <span className="sub">{new Date(msg.created_at).toLocaleString('da-DK')}</span>
-              </div>
-
-              <p style={{ margin: 0 }}>{msg.body}</p>
-
-              {msg.reply && (
-                <div style={{ background: '#e1f5ee', borderRadius: 8, padding: 10 }}>
-                  <div style={{ fontSize: 12, color: '#0f6e56', marginBottom: 4 }}>Dit svar</div>
-                  <p style={{ margin: 0, color: '#04342c' }}>{msg.reply}</p>
-                </div>
-              )}
-
-              <form
-                action={async (formData) => {
-                  'use server'
-                  await replyToMessage(msg.id, formData)
-                }}
-                style={{ display: 'flex', gap: 8, marginTop: 4 }}
-              >
-                <input
-                  name="reply"
-                  defaultValue={msg.reply || ''}
-                  placeholder="Skriv et svar..."
-                  style={{ flex: 1, padding: 10 }}
-                />
-                <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '10px 18px' }}>
-                  Svar
-                </button>
-              </form>
-            </div>
-          ))
-        ) : (
-          <div className="empty-state">Ingen beskeder endnu.</div>
-        )}
-      </div>
-    </div>
-  )
-}
+                      <span style={{ fontFamily: 'monospace', fontWeight: 500

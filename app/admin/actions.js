@@ -52,3 +52,38 @@ export async function replyToMessage(id, formData) {
     .eq('id', id)
   revalidatePath('/admin')
 }
+
+export async function updateToolDetails(id, formData) {
+  const supabase = await createClient()
+
+  const updates = {
+    description: formData.get('description') || null,
+    purchase_date: formData.get('purchase_date') || null,
+    purchase_price: formData.get('purchase_price') ? Number(formData.get('purchase_price')) : null,
+    last_serviced: formData.get('last_serviced') || null,
+    service_interval_months: formData.get('service_interval_months') ? Number(formData.get('service_interval_months')) : 12,
+    for_sale: formData.get('for_sale') === 'on',
+    sale_price: formData.get('sale_price') ? Number(formData.get('sale_price')) : null,
+  }
+
+  const imageFile = formData.get('image')
+  if (imageFile && imageFile.size > 0) {
+    const fileExt = imageFile.name.split('.').pop()
+    const fileName = `${id}-${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('tool-images')
+      .upload(fileName, imageFile, { upsert: true })
+
+    if (!uploadError) {
+      const { data: publicUrlData } = supabase.storage
+        .from('tool-images')
+        .getPublicUrl(fileName)
+      updates.image_url = publicUrlData.publicUrl
+    }
+  }
+
+  await supabase.from('tools').update(updates).eq('id', id)
+  revalidatePath('/admin')
+  revalidatePath('/')
+}

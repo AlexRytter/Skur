@@ -1,47 +1,108 @@
-import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import LogoutButton from './logout-button'
 
-export default async function Home() {
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })
+}
+
+function getStatus(startDate, endDate) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  if (today < start) return { label: 'Kommer op', className: 'upcoming' }
+  if (today > end) return { label: 'Afsluttet', className: 'done' }
+  return { label: 'Udlejet nu', className: 'active' }
+}
+
+export default async function MinSide() {
   const supabase = await createClient()
-  const { data: tools } = await supabase
-    .from('tools')
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: bookings } = await supabase
+    .from('bookings')
     .select('*')
-    .order('price_per_day', { ascending: true })
+    .eq('user_id', user.id)
+    .order('start_date', { ascending: false })
+
+  const { data: messages } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
 
   return (
-    <div>
-      <header className="hero">
-        <div className="eyebrow">Åbent i Jægerspris</div>
-        <h1>Lej værktøj, <em>ikke hele forretningen.</em></h1>
-        <p className="lead">
-          Skur er et skur fuld af værktøj, du kan låne for en dag eller en uge — uden at skulle eje det selv.
-        </p>
-      </header>
-
-      <section className="section">
-        <div className="section-head">
-          <h2>I skuret lige nu</h2>
+    <div className="page-wrap">
+      <div className="page-head">
+        <div>
+          <h1>Hej {user.email}</h1>
+          <p>Her er dine lejemål og din profil hos Skur.</p>
         </div>
+        <LogoutButton />
+      </div>
 
-        {tools && tools.length > 0 ? (
-          <div className="tool-grid">
-            {tools.map((tool) => (
-              <Link
-                href={tool.available ? `/book/${tool.id}` : '#'}
-                className={`tool-card ${!tool.available ? 'unavailable' : ''}`}
-                key={tool.id}
-                style={{ textDecoration: 'none', color: 'inherit', pointerEvents: tool.available ? 'auto' : 'none' }}
-              >
-                <h3>{tool.name}</h3>
-                <div className="price">{tool.price_per_day} kr / dag</div>
-                <div className="avail">{tool.available ? 'Ledig i dag — book nu' : 'Udlejet'}</div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">Der er ikke registreret værktøj endnu.</div>
-        )}
-      </section>
+      <div className="section-title">Dine lejemål</div>
+      {bookings && bookings.length > 0 ? (
+        <div className="booking-list" style={{ marginBottom: 48 }}>
+          {bookings.map((b) => {
+            const status = getStatus(b.start_date, b.end_date)
+            return (
+              <div className="booking-row" key={b.id}>
+                <div>
+                  <div className="tool-name">{b.tool_name}</div>
+                  <div className="sub">{formatDate(b.start_date)} – {formatDate(b.end_date)}</div>
+                </div>
+                <div className="sub">
+                  {b.delivery_type === 'delivery' ? 'Leveres' : 'Afhentet på Tuevej 7'}
+                </div>
+                <div className={`status-chip ${status.className}`}>{status.label}</div>
+                <div className="row-price">{b.price} kr</div>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="empty-state" style={{ marginBottom: 48 }}>
+          Du har endnu ingen lejemål. Når du booker værktøj, vises det her.
+        </div>
+      )}
+
+      <div className="section-title">Dine beskeder</div>
+      {messages && messages.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              style={{
+                background: '#f4efe6',
+                borderRadius: 10,
+                padding: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <div className="sub">{new Date(msg.created_at).toLocaleString('da-DK')}</div>
+              <p style={{ margin: 0 }}>{msg.body}</p>
+              {msg.reply ? (
+                <div style={{ background: '#e1f5ee', borderRadius: 8, padding: 10 }}>
+                  <div style={{ fontSize: 12, color: '#0f6e56', marginBottom: 4 }}>Svar fra Skur</div>
+                  <p style={{ margin: 0, color: '#04342c' }}>{msg.reply}</p>
+                </div>
+              ) : (
+                <div className="sub" style={{ fontStyle: 'italic' }}>Afventer svar...</div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">Du har ikke sendt nogen beskeder endnu.</div>
+      )}
     </div>
   )
 }

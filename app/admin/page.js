@@ -60,7 +60,7 @@ export default async function AdminPage() {
       </form>
 
       <div className="section-title">Alle værktøjer</div>
-      <hr style={{ border: 'none', borderTop: '2px solid #2c2c2a', margin: '0 0 16px' }} />
+      <hr style={{ border: 'none', borderTop: '2px solid #red', margin: '0 0 16px' }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 48 }}>
         {tools && tools.length > 0 ? (
           tools.map((tool) => {

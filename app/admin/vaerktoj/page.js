@@ -11,6 +11,24 @@ import {
   updateToolUnitStatus,
 } from '../actions'
 
+function getUnitStatus(unit, bookings) {
+  if (unit.status === 'service') return { label: 'Til service', className: 'unavailable' }
+  if (unit.status === 'sold') return { label: 'Solgt', className: 'unavailable' }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const activeBooking = (bookings || []).find((b) => {
+    if (b.tool_unit_id !== unit.id) return false
+    const start = new Date(b.start_date)
+    const end = new Date(b.end_date)
+    return today >= start && today <= end
+  })
+
+  if (activeBooking) return { label: 'Udlejet', className: 'unavailable' }
+  return { label: 'Ledig', className: 'active' }
+}
+
 export default async function VaerktojPage() {
   const supabase = await createClient()
 
@@ -93,16 +111,6 @@ export default async function VaerktojPage() {
                   </div>
                   <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '8px 14px' }}>
                     Gem
-                  </button>
-                  <button
-                    formAction={async () => {
-                      'use server'
-                      await toggleAvailable(tool.id, tool.available)
-                    }}
-                    className={`status-chip ${tool.available ? 'active' : 'unavailable'}`}
-                    style={{ border: 'none', cursor: 'pointer' }}
-                  >
-                    {tool.available ? 'Ledig' : 'Udlejet'}
                   </button>
                   {serviceWarning && (
                     <span className="status-chip" style={{ background: '#faeeda', color: '#633806' }}>
@@ -189,57 +197,61 @@ export default async function VaerktojPage() {
                 <div style={{ borderTop: '0.5px solid #d3d1c7', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ fontSize: 13, fontWeight: 500 }}>Fysiske eksemplarer ({toolUnits.length})</div>
 
-                  {toolUnits.map((unit) => (
-                    <div
-                      key={unit.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        flexWrap: 'wrap',
-                        background: '#fff',
-                        borderRadius: 8,
-                        padding: 8,
-                      }}
-                    >
-                      <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{unit.unit_code}</span>
-                      {unit.serial_number && <span style={{ fontSize: 12, color: '#5f5e5a' }}>SN: {unit.serial_number}</span>}
-                      {unit.purchase_price && (
-                        <span style={{ fontSize: 12, color: '#5f5e5a' }}>
-                          {Number(unit.purchase_price).toLocaleString('da-DK')} kr
-                        </span>
-                      )}
-
-                      <form
-                        action={async (formData) => {
-                          'use server'
-                          await updateToolUnitStatus(unit.id, formData.get('status'))
-                        }}
-                        style={{ display: 'flex', gap: 6, alignItems: 'center' }}
-                      >
-                        <select name="status" defaultValue={unit.status} style={{ padding: 6 }}>
-                          <option value="available">Ledig</option>
-                          <option value="rented">Udlejet</option>
-                          <option value="service">Til service</option>
-                          <option value="sold">Solgt</option>
-                        </select>
-                        <button type="submit" style={{ padding: '6px 10px', fontSize: 12 }}>
-                          Opdater
-                        </button>
-                      </form>
-
-                      <form
-                        action={async () => {
-                          'use server'
-                          await deleteToolUnit(unit.id)
+                  {toolUnits.map((unit) => {
+                    const status = getUnitStatus(unit, bookings)
+                    return (
+                      <div
+                        key={unit.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          flexWrap: 'wrap',
+                          background: '#fff',
+                          borderRadius: 8,
+                          padding: 8,
                         }}
                       >
-                        <button type="submit" style={{ color: '#993c1d', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13 }}>
-                          Slet
-                        </button>
-                      </form>
-                    </div>
-                  ))}
+                        <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{unit.unit_code}</span>
+                        {unit.serial_number && <span style={{ fontSize: 12, color: '#5f5e5a' }}>SN: {unit.serial_number}</span>}
+                        {unit.purchase_price && (
+                          <span style={{ fontSize: 12, color: '#5f5e5a' }}>
+                            {Number(unit.purchase_price).toLocaleString('da-DK')} kr
+                          </span>
+                        )}
+
+                        <span className={`status-chip ${status.className}`}>{status.label}</span>
+
+                        <form
+                          action={async (formData) => {
+                            'use server'
+                            await updateToolUnitStatus(unit.id, formData.get('status'))
+                          }}
+                          style={{ display: 'flex', gap: 6, alignItems: 'center' }}
+                        >
+                          <select name="status" defaultValue={unit.status} style={{ padding: 6 }}>
+                            <option value="available">Automatisk (følger booking)</option>
+                            <option value="service">Til service</option>
+                            <option value="sold">Solgt</option>
+                          </select>
+                          <button type="submit" style={{ padding: '6px 10px', fontSize: 12 }}>
+                            Opdater
+                          </button>
+                        </form>
+
+                        <form
+                          action={async () => {
+                            'use server'
+                            await deleteToolUnit(unit.id)
+                          }}
+                        >
+                          <button type="submit" style={{ color: '#993c1d', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13 }}>
+                            Slet
+                          </button>
+                        </form>
+                      </div>
+                    )
+                  })}
 
                   <form
                     action={async (formData) => {

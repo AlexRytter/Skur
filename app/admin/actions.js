@@ -58,8 +58,6 @@ export async function updateToolDetails(id, formData) {
 
   const updates = {
     description: formData.get('description') || null,
-    purchase_date: formData.get('purchase_date') || null,
-    purchase_price: formData.get('purchase_price') ? Number(formData.get('purchase_price')) : null,
     last_serviced: formData.get('last_serviced') || null,
     service_interval_months: formData.get('service_interval_months') ? Number(formData.get('service_interval_months')) : 12,
     for_sale: formData.get('for_sale') === 'on',
@@ -87,6 +85,7 @@ export async function updateToolDetails(id, formData) {
   revalidatePath('/admin')
   revalidatePath('/')
 }
+
 export async function addToolUnit(toolId, formData) {
   const supabase = await createClient()
   const brand = formData.get('brand')

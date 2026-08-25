@@ -16,6 +16,7 @@ export default function BookingForm({ tool }) {
     startDate && endDate
       ? Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1)
       : 0
+
   const price = days * tool.price_per_day
 
   async function handleSubmit(e) {
@@ -35,9 +36,43 @@ export default function BookingForm({ tool }) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
+    const { data: units } = await supabase
+      .from('tool_units')
+      .select('*')
+      .eq('tool_id', tool.id)
+      .in('status', ['available', 'rented'])
+
+    if (!units || units.length === 0) {
+      setError('Der er ikke oprettet noget fysisk eksemplar af dette værktøj endnu.')
+      setLoading(false)
+      return
+    }
+
+    const { data: existingBookings } = await supabase
+      .from('bookings')
+      .select('*')
+      .in('tool_unit_id', units.map((u) => u.id))
+
+    const freeUnit = units.find((unit) => {
+      const overlapping = (existingBookings || []).filter(
+        (b) =>
+          b.tool_unit_id === unit.id &&
+          new Date(startDate) <= new Date(b.end_date) &&
+          new Date(endDate) >= new Date(b.start_date)
+      )
+      return overlapping.length === 0
+    })
+
+    if (!freeUnit) {
+      setError('Ingen eksemplarer af dette værktøj er ledige i den valgte periode.')
+      setLoading(false)
+      return
+    }
+
     const { error: insertError } = await supabase.from('bookings').insert({
       user_id: user.id,
       tool_name: tool.name,
+      tool_unit_id: freeUnit.id,
       start_date: startDate,
       end_date: endDate,
       price,

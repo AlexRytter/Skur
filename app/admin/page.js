@@ -93,7 +93,7 @@ export default async function AdminPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 12,
-                  border: '4px solid red',
+                  border: '1px solid #1C201B'
                 }}
               >
                 <form

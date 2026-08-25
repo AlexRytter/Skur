@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import PriceInput from './price-input'
 import {
   addTool,
   updateTool,
@@ -52,9 +53,9 @@ export default async function AdminPage() {
 
       <div className="section-title">Tilføj nyt værktøj</div>
       <form action={addTool} style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
-        <input name="name" placeholder="Navn" required style={{ flex: 1, minWidth: 160, padding: 10 }} />
+        <input name="name" placeholder="Navn (fx Boremaskine)" required style={{ flex: 1, minWidth: 160, padding: 10 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <input name="price_per_day" type="number" placeholder="Pris pr. dag" required style={{ width: 140, padding: 10 }} />
+          <PriceInput name="price_per_day" placeholder="Pris pr. dag" style={{ width: 140, padding: 10 }} />
           <span style={{ fontSize: 13, color: '#5f5e5a' }}>kr</span>
         </div>
         <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '10px 20px' }}>
@@ -106,9 +107,9 @@ export default async function AdminPage() {
                   }}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}
                 >
-                  <input name="name" defaultValue={tool.name} style={{ flex: 1, minWidth: 140, padding: 8 }} />
+                  <input name="name" defaultValue={tool.name} placeholder="Navn" style={{ flex: 1, minWidth: 140, padding: 8 }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <input name="price_per_day" type="number" defaultValue={tool.price_per_day} style={{ width: 100, padding: 8 }} />
+                    <PriceInput name="price_per_day" defaultValue={tool.price_per_day} style={{ width: 100, padding: 8 }} />
                     <span style={{ fontSize: 13, color: '#5f5e5a' }}>kr</span>
                   </div>
                   <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '8px 14px' }}>
@@ -147,7 +148,7 @@ export default async function AdminPage() {
 
                 <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#5f5e5a' }}>
                   <span>Udlejet {rentCount} gange</span>
-                  <span>Indtjent {earnings} kr</span>
+                  <span>Indtjent {earnings.toLocaleString('da-DK')} kr</span>
                 </div>
 
                 <form
@@ -169,7 +170,13 @@ export default async function AdminPage() {
                   </div>
 
                   <label style={{ fontSize: 12, color: '#5f5e5a' }}>Beskrivelse (vises til kunder)</label>
-                  <textarea name="description" defaultValue={tool.description || ''} rows={2} style={{ padding: 8 }} />
+                  <textarea
+                    name="description"
+                    defaultValue={tool.description || ''}
+                    placeholder="Fx: Kraftig borehammer velegnet til beton og mursten"
+                    rows={2}
+                    style={{ padding: 8 }}
+                  />
 
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     <div>
@@ -190,7 +197,7 @@ export default async function AdminPage() {
                     <div>
                       <label style={{ fontSize: 12, color: '#5f5e5a' }}>Salgspris</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <input type="number" name="sale_price" defaultValue={tool.sale_price || ''} style={{ padding: 8, width: 100 }} />
+                        <PriceInput name="sale_price" defaultValue={tool.sale_price} style={{ padding: 8, width: 100 }} />
                         <span style={{ fontSize: 13, color: '#5f5e5a' }}>kr</span>
                       </div>
                     </div>
@@ -218,7 +225,11 @@ export default async function AdminPage() {
                     >
                       <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{unit.unit_code}</span>
                       {unit.serial_number && <span style={{ fontSize: 12, color: '#5f5e5a' }}>SN: {unit.serial_number}</span>}
-                      {unit.purchase_price && <span style={{ fontSize: 12, color: '#5f5e5a' }}>{unit.purchase_price} kr</span>}
+                      {unit.purchase_price && (
+                        <span style={{ fontSize: 12, color: '#5f5e5a' }}>
+                          {Number(unit.purchase_price).toLocaleString('da-DK')} kr
+                        </span>
+                      )}
 
                       <form
                         action={async (formData) => {
@@ -273,7 +284,7 @@ export default async function AdminPage() {
                     <div>
                       <label style={{ fontSize: 12, color: '#5f5e5a' }}>Købspris</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <input type="number" name="purchase_price" style={{ padding: 8, width: 100 }} />
+                        <PriceInput name="purchase_price" style={{ padding: 8, width: 100 }} />
                         <span style={{ fontSize: 13, color: '#5f5e5a' }}>kr</span>
                       </div>
                     </div>

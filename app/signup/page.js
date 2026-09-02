@@ -1,10 +1,12 @@
 'use client'
-
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SignupPage() {
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -22,6 +24,11 @@ export default function SignupPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          full_name: fullName,
+          phone: phone,
+          address: address,
+        },
       },
     })
 
@@ -30,7 +37,6 @@ export default function SignupPage() {
       setLoading(false)
       return
     }
-
     setSuccess(true)
     setLoading(false)
   }
@@ -40,13 +46,43 @@ export default function SignupPage() {
       <div className="auth-card">
         <h1>Opret dig</h1>
         <p className="sub">Opret en konto for at booke værktøj hos Skur.</p>
-
         {success ? (
           <div className="auth-message success">
             Tjek din email — vi har sendt et bekræftelseslink. Klik på det for at aktivere din konto.
           </div>
         ) : (
           <form onSubmit={handleSignup}>
+            <div className="field">
+              <label htmlFor="fullName">Fulde navn</label>
+              <input
+                id="fullName"
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="phone">Telefonnummer</label>
+              <input
+                id="phone"
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="address">Adresse</label>
+              <input
+                id="address"
+                type="text"
+                required
+                placeholder="Vejnavn, husnummer, postnummer, by"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
             <div className="field">
               <label htmlFor="email">Email</label>
               <input
@@ -68,15 +104,12 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-
             {error && <div className="auth-message error">{error}</div>}
-
             <button className="btn-primary" type="submit" disabled={loading}>
               {loading ? 'Opretter…' : 'Opret konto'}
             </button>
           </form>
         )}
-
         <p className="auth-switch">Har du allerede en konto? <Link href="/login">Log ind</Link></p>
       </div>
     </div>

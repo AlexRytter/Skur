@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { calculateDeliveryPrice } from '@/app/lib/delivery'
@@ -16,6 +16,44 @@ export default function BookingForm({ tool }) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const addressInputRef = useRef(null)
+
+  useEffect(() => {
+    if (deliveryType !== 'delivery') return
+    if (window.google && window.google.maps && window.google.maps.places) {
+      initAutocomplete()
+      return
+    }
+
+    const existingScript = document.getElementById('google-maps-script')
+    if (existingScript) {
+      existingScript.addEventListener('load', initAutocomplete)
+      return
+    }
+
+    const script = document.createElement('script')
+    script.id = 'google-maps-script'
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&language=da&region=DK`
+    script.async = true
+    script.onload = initAutocomplete
+    document.body.appendChild(script)
+  }, [deliveryType])
+
+  function initAutocomplete() {
+    if (!addressInputRef.current || !window.google) return
+    const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+      types: ['address'],
+      componentRestrictions: { country: 'dk' },
+      fields: ['formatted_address'],
+    })
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace()
+      if (place && place.formatted_address) {
+        setAddress(place.formatted_address)
+        setDeliveryInfo(null)
+      }
+    })
+  }
 
   const days =
     startDate && endDate
@@ -172,8 +210,9 @@ export default function BookingForm({ tool }) {
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               id="address"
+              ref={addressInputRef}
               type="text"
-              placeholder="Vejnavn, husnummer, postnummer, by"
+              placeholder="Begynd at skrive din adresse..."
               value={address}
               onChange={(e) => {
                 setAddress(e.target.value)

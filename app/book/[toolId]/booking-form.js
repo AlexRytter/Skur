@@ -17,6 +17,7 @@ export default function BookingForm({ tool }) {
   const [company, setCompany] = useState('')
   const [contactPerson, setContactPerson] = useState('')
   const [contactPhone, setContactPhone] = useState('')
+  const [noPhone, setNoPhone] = useState(false)
   const [remark, setRemark] = useState('')
 
   const [deliveryInfo, setDeliveryInfo] = useState(null)
@@ -27,6 +28,7 @@ export default function BookingForm({ tool }) {
   const router = useRouter()
   const supabase = createClient()
   const streetInputRef = useRef(null)
+  const contactPhoneRef = useRef(null)
 
   const days =
     startDate && endDate
@@ -37,7 +39,8 @@ export default function BookingForm({ tool }) {
   const deliveryPrice = deliveryType === 'delivery' && deliveryInfo?.price ? deliveryInfo.price : 0
   const totalPrice = rentalPrice + deliveryPrice
 
-  const phoneMissing = deliveryType === 'delivery' && contactPerson.trim() !== '' && contactPhone.trim() === ''
+  const phoneUnresolved =
+    deliveryType === 'delivery' && contactPerson.trim() !== '' && contactPhone.trim() === '' && !noPhone
 
   useEffect(() => {
     if (deliveryType !== 'delivery') return
@@ -129,8 +132,8 @@ export default function BookingForm({ tool }) {
         setError('Beregn leveringsprisen først ved at klikke "Beregn pris".')
         return
       }
-      if (phoneMissing) {
-        setError('Angiv et telefonnummer på kontaktpersonen.')
+      if (phoneUnresolved) {
+        setError('Angiv et telefonnummer på kontaktpersonen, eller markér at der ikke er noget.')
         return
       }
     }
@@ -179,7 +182,8 @@ export default function BookingForm({ tool }) {
       if (floorDoor.trim()) detailLines.push(`Etage/dørnummer: ${floorDoor.trim()}`)
       if (company.trim()) detailLines.push(`Firma: ${company.trim()}`)
       if (contactPerson.trim()) {
-        detailLines.push(`Kontaktperson: ${contactPerson.trim()}${contactPhone.trim() ? ` (${contactPhone.trim()})` : ''}`)
+        const phoneText = contactPhone.trim() ? contactPhone.trim() : 'intet nummer oplyst'
+        detailLines.push(`Kontaktperson: ${contactPerson.trim()} (${phoneText})`)
       }
       if (remark.trim()) detailLines.push(`Bemærkning: ${remark.trim()}`)
     }
@@ -292,6 +296,8 @@ export default function BookingForm({ tool }) {
               <label htmlFor="postnr">Postnr.</label>
               <input
                 id="postnr"
+                name="skur-postnr"
+                autoComplete="off"
                 type="text"
                 value={postnr}
                 onChange={(e) => {
@@ -304,6 +310,8 @@ export default function BookingForm({ tool }) {
               <label htmlFor="by">By</label>
               <input
                 id="by"
+                name="skur-by"
+                autoComplete="off"
                 type="text"
                 value={by}
                 onChange={(e) => {
@@ -321,6 +329,8 @@ export default function BookingForm({ tool }) {
             </label>
             <input
               id="floorDoor"
+              name="skur-etage"
+              autoComplete="off"
               type="text"
               placeholder="F.eks. 2. th."
               value={floorDoor}
@@ -334,6 +344,8 @@ export default function BookingForm({ tool }) {
             </label>
             <input
               id="company"
+              name="skur-firma"
+              autoComplete="off"
               type="text"
               placeholder="F.eks. Novo Nordisk"
               value={company}
@@ -348,27 +360,50 @@ export default function BookingForm({ tool }) {
               </label>
               <input
                 id="contactPerson"
+                name="skur-kontakt"
+                autoComplete="off"
                 type="text"
                 placeholder="F.eks. Anne Jensen"
                 value={contactPerson}
                 onChange={(e) => setContactPerson(e.target.value)}
+                onBlur={() => {
+                  if (contactPerson.trim() && !contactPhone.trim() && !noPhone) {
+                    contactPhoneRef.current?.focus()
+                  }
+                }}
               />
             </div>
             <div style={{ flex: '1 1 110px' }}>
               <label htmlFor="contactPhone">Telefon</label>
               <input
                 id="contactPhone"
+                name="skur-telefon"
+                autoComplete="off"
+                ref={contactPhoneRef}
                 type="tel"
-                placeholder={phoneMissing ? 'Angiv tlf.' : ''}
+                placeholder={phoneUnresolved ? 'Angiv tlf.' : ''}
                 value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
+                onChange={(e) => {
+                  setContactPhone(e.target.value)
+                  if (e.target.value.trim()) setNoPhone(false)
+                }}
                 style={
-                  phoneMissing
+                  phoneUnresolved
                     ? { borderColor: 'var(--border-danger)', color: 'var(--text-danger)' }
                     : undefined
                 }
               />
             </div>
+            {contactPerson.trim() && !contactPhone.trim() && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', flexBasis: '100%', marginTop: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={noPhone}
+                  onChange={(e) => setNoPhone(e.target.checked)}
+                />
+                Kunden har ikke oplyst noget telefonnummer
+              </label>
+            )}
           </div>
 
           <div className="field">
@@ -377,6 +412,8 @@ export default function BookingForm({ tool }) {
             </label>
             <textarea
               id="remark"
+              name="skur-bemaerkning"
+              autoComplete="off"
               rows={3}
               placeholder="F.eks. Ring på ved ankomst, hunden er i haven"
               value={remark}

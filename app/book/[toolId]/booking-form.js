@@ -39,7 +39,6 @@ export default function BookingForm({ tool }) {
 
   const phoneMissing = deliveryType === 'delivery' && contactPerson.trim() !== '' && contactPhone.trim() === ''
 
-  // Google Places Autocomplete på vejnavn-feltet
   useEffect(() => {
     if (deliveryType !== 'delivery') return
 
@@ -264,6 +263,8 @@ export default function BookingForm({ tool }) {
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 id="street"
+                name="skur-vejnavn"
+                autoComplete="off"
                 ref={streetInputRef}
                 type="text"
                 placeholder="F.eks. Tuevej 7"

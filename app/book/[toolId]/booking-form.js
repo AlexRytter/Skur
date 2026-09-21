@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { calculateDeliveryPrice } from '@/app/lib/delivery'
+import AvailabilityCalendar from './availability-calendar'
 
 export default function BookingForm({ tool }) {
   const [startDate, setStartDate] = useState('')
@@ -116,7 +117,7 @@ export default function BookingForm({ tool }) {
     setError('')
 
     if (!startDate || !endDate) {
-      setError('Vælg både start- og slutdato.')
+      setError('Vælg både start- og slutdato i kalenderen.')
       return
     }
     if (new Date(endDate) < new Date(startDate)) {
@@ -214,24 +215,21 @@ export default function BookingForm({ tool }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="field">
-        <label htmlFor="start">Startdato</label>
-        <input
-          id="start"
-          type="date"
-          required
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
+        <label>Vælg periode</label>
+        <AvailabilityCalendar
+          toolId={tool.id}
+          startDate={startDate}
+          endDate={endDate}
+          onChange={(newStart, newEnd) => {
+            setStartDate(newStart)
+            setEndDate(newEnd)
+          }}
         />
-      </div>
-      <div className="field">
-        <label htmlFor="end">Slutdato</label>
-        <input
-          id="end"
-          type="date"
-          required
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-        />
+        {startDate && (
+          <p className="sub" style={{ marginTop: 8 }}>
+            {endDate ? `Valgt: ${startDate} – ${endDate}` : `Startdato valgt: ${startDate} — vælg slutdato`}
+          </p>
+        )}
       </div>
 
       <div className="field">
@@ -443,9 +441,4 @@ export default function BookingForm({ tool }) {
 
       {error && <div className="auth-message error">{error}</div>}
 
-      <button className="btn-primary" type="submit" disabled={loading}>
-        {loading ? 'Booker…' : 'Bekræft booking'}
-      </button>
-    </form>
-  )
-}
+      <button

@@ -56,7 +56,7 @@ export default async function MinSide({ searchParams }) {
           {bookings.map((b) => {
             const status = getStatus(b.start_date, b.end_date)
             const showReturnButton =
-              (status.className === 'active' || status.className === 'done') && !b.customer_returned_at
+              (status.className === 'active' || status.className === 'done') && !b.customer_returned_at && !b.returned_at
 
             return (
               <div key={b.id}>

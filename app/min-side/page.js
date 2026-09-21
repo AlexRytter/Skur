@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import LogoutButton from './logout-button'
-import { sendMessage } from '../actions'
+import { sendMessage, markBookingReturned } from '../actions'
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })
@@ -55,17 +55,48 @@ export default async function MinSide({ searchParams }) {
         <div className="booking-list" style={{ marginBottom: 48 }}>
           {bookings.map((b) => {
             const status = getStatus(b.start_date, b.end_date)
+            const showReturnButton =
+              (status.className === 'active' || status.className === 'done') && !b.customer_returned_at
+
             return (
-              <div className="booking-row" key={b.id}>
-                <div>
-                  <div className="tool-name">{b.tool_name}</div>
-                  <div className="sub">{formatDate(b.start_date)} – {formatDate(b.end_date)}</div>
+              <div key={b.id}>
+                <div className="booking-row">
+                  <div>
+                    <div className="tool-name">{b.tool_name}</div>
+                    <div className="sub">{formatDate(b.start_date)} – {formatDate(b.end_date)}</div>
+                  </div>
+                  <div className="sub">
+                    {b.delivery_type === 'delivery' ? 'Leveres' : 'Afhentet på Tuevej 7'}
+                  </div>
+                  <div className={`status-chip ${status.className}`}>{status.label}</div>
+                  <div className="row-price">{b.price} kr</div>
                 </div>
-                <div className="sub">
-                  {b.delivery_type === 'delivery' ? 'Leveres' : 'Afhentet på Tuevej 7'}
-                </div>
-                <div className={`status-chip ${status.className}`}>{status.label}</div>
-                <div className="row-price">{b.price} kr</div>
+
+                {showReturnButton && (
+                  <form
+                    action={async () => {
+                      'use server'
+                      await markBookingReturned(b.id)
+                    }}
+                    style={{ marginTop: -8, marginBottom: 16, paddingLeft: 2 }}
+                  >
+                    <button type="submit" style={{ fontSize: 13, padding: '6px 12px' }}>
+                      Marker som afleveret
+                    </button>
+                  </form>
+                )}
+
+                {b.customer_returned_at && !b.returned_at && (
+                  <div className="sub" style={{ marginTop: -8, marginBottom: 16, paddingLeft: 2, color: '#3b6d11' }}>
+                    Du har markeret denne som afleveret — afventer bekræftelse fra Skur.
+                  </div>
+                )}
+
+                {b.returned_at && (
+                  <div className="sub" style={{ marginTop: -8, marginBottom: 16, paddingLeft: 2, color: '#3b6d11' }}>
+                    Afleveret og modtaget af Skur.
+                  </div>
+                )}
               </div>
             )
           })}

@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import PriceInput from '../price-input'
+import ToolArchiveActions from './tool-archive-actions'
 import {
   addTool,
   updateTool,
   toggleAvailable,
-  deleteTool,
   updateToolDetails,
   addToolUnit,
   deleteToolUnit,
@@ -35,6 +35,7 @@ export default async function VaerktojPage() {
   const { data: tools } = await supabase
     .from('tools')
     .select('*')
+    .eq('status', 'aktiv')
     .order('name', { ascending: true })
 
   const { data: bookings } = await supabase
@@ -45,6 +46,11 @@ export default async function VaerktojPage() {
     .from('tool_units')
     .select('*')
     .order('unit_code', { ascending: true })
+
+  const { data: customers } = await supabase
+    .from('customer_profiles')
+    .select('id, full_name, phone')
+    .order('full_name', { ascending: true })
 
   return (
     <>
@@ -122,20 +128,12 @@ export default async function VaerktojPage() {
                       Til salg
                     </span>
                   )}
-                  <button
-                    formAction={async () => {
-                      'use server'
-                      await deleteTool(tool.id)
-                    }}
-                    style={{ color: '#993c1d', border: 'none', background: 'none', cursor: 'pointer' }}
-                  >
-                    Slet
-                  </button>
                 </form>
 
-                <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#5f5e5a' }}>
+                <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#5f5e5a', flexWrap: 'wrap', alignItems: 'center' }}>
                   <span>Udlejet {rentCount} gange</span>
                   <span>Indtjent {earnings.toLocaleString('da-DK')} kr</span>
+                  <ToolArchiveActions tool={tool} customers={customers || []} />
                 </div>
 
                 <form

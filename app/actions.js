@@ -19,3 +19,18 @@ export async function sendMessage(formData) {
   revalidatePath('/min-side')
   redirect('/min-side?sendt=1')
 }
+
+export async function markBookingReturned(bookingId) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return
+
+  await supabase
+    .from('bookings')
+    .update({ customer_returned_at: new Date().toISOString() })
+    .eq('id', bookingId)
+    .eq('user_id', user.id)
+
+  revalidatePath('/min-side')
+}

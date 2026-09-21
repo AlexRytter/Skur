@@ -9,51 +9,24 @@ export default function BookingForm({ tool }) {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [deliveryType, setDeliveryType] = useState('pickup')
-  const [address, setAddress] = useState('')
+
+  const [street, setStreet] = useState('')
+  const [postnr, setPostnr] = useState('')
+  const [by, setBy] = useState('')
+  const [floorDoor, setFloorDoor] = useState('')
+  const [company, setCompany] = useState('')
+  const [contactPerson, setContactPerson] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [remark, setRemark] = useState('')
+
   const [deliveryInfo, setDeliveryInfo] = useState(null)
   const [checkingDelivery, setCheckingDelivery] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
   const router = useRouter()
   const supabase = createClient()
-  const addressInputRef = useRef(null)
-
-  useEffect(() => {
-    if (deliveryType !== 'delivery') return
-    if (window.google && window.google.maps && window.google.maps.places) {
-      initAutocomplete()
-      return
-    }
-
-    const existingScript = document.getElementById('google-maps-script')
-    if (existingScript) {
-      existingScript.addEventListener('load', initAutocomplete)
-      return
-    }
-
-    const script = document.createElement('script')
-    script.id = 'google-maps-script'
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&language=da&region=DK`
-    script.async = true
-    script.onload = initAutocomplete
-    document.body.appendChild(script)
-  }, [deliveryType])
-
-  function initAutocomplete() {
-    if (!addressInputRef.current || !window.google) return
-    const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-      types: ['address'],
-      componentRestrictions: { country: 'dk' },
-      fields: ['formatted_address'],
-    })
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace()
-      if (place && place.formatted_address) {
-        setAddress(place.formatted_address)
-        setDeliveryInfo(null)
-      }
-    })
-  }
+  const streetInputRef = useRef(null)
 
   const days =
     startDate && endDate
@@ -64,13 +37,69 @@ export default function BookingForm({ tool }) {
   const deliveryPrice = deliveryType === 'delivery' && deliveryInfo?.price ? deliveryInfo.price : 0
   const totalPrice = rentalPrice + deliveryPrice
 
+  const phoneMissing = deliveryType === 'delivery' && contactPerson.trim() !== '' && contactPhone.trim() === ''
+
+  // Google Places Autocomplete på vejnavn-feltet
+  useEffect(() => {
+    if (deliveryType !== 'delivery') return
+
+    function initAutocomplete() {
+      if (!streetInputRef.current || !window.google) return
+
+      const autocomplete = new window.google.maps.places.Autocomplete(streetInputRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'dk' },
+      })
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace()
+        if (!place.address_components) return
+
+        let streetNumber = ''
+        let route = ''
+        let newPostnr = ''
+        let newBy = ''
+
+        for (const comp of place.address_components) {
+          if (comp.types.includes('street_number')) streetNumber = comp.long_name
+          if (comp.types.includes('route')) route = comp.long_name
+          if (comp.types.includes('postal_code')) newPostnr = comp.long_name
+          if (comp.types.includes('postal_town') || comp.types.includes('locality')) newBy = comp.long_name
+        }
+
+        setStreet([route, streetNumber].filter(Boolean).join(' '))
+        setPostnr(newPostnr)
+        setBy(newBy)
+        setDeliveryInfo(null)
+      })
+    }
+
+    if (window.google && window.google.maps && window.google.maps.places) {
+      initAutocomplete()
+    } else {
+      const existingScript = document.getElementById('google-maps-script')
+      if (existingScript) {
+        existingScript.addEventListener('load', initAutocomplete)
+      } else {
+        const script = document.createElement('script')
+        script.id = 'google-maps-script'
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`
+        script.async = true
+        script.defer = true
+        script.onload = initAutocomplete
+        document.head.appendChild(script)
+      }
+    }
+  }, [deliveryType])
+
   async function handleCheckDelivery() {
-    if (!address) return
+    if (!street || !postnr || !by) return
     setCheckingDelivery(true)
     setDeliveryInfo(null)
     setError('')
 
-    const result = await calculateDeliveryPrice(address)
+    const fullAddress = `${street}, ${postnr} ${by}`
+    const result = await calculateDeliveryPrice(fullAddress)
 
     if (result.error) {
       setError(result.error)
@@ -92,9 +121,19 @@ export default function BookingForm({ tool }) {
       setError('Slutdato skal ligge efter startdato.')
       return
     }
-    if (deliveryType === 'delivery' && !deliveryInfo) {
-      setError('Beregn leveringsprisen først ved at klikke "Beregn pris".')
-      return
+    if (deliveryType === 'delivery') {
+      if (!street || !postnr || !by) {
+        setError('Udfyld adressen (vejnavn, postnr. og by).')
+        return
+      }
+      if (!deliveryInfo) {
+        setError('Beregn leveringsprisen først ved at klikke "Beregn pris".')
+        return
+      }
+      if (phoneMissing) {
+        setError('Angiv et telefonnummer på kontaktpersonen.')
+        return
+      }
     }
 
     setLoading(true)
@@ -134,6 +173,19 @@ export default function BookingForm({ tool }) {
       return
     }
 
+    const fullAddress = deliveryType === 'delivery' ? `${street}, ${postnr} ${by}` : null
+
+    const detailLines = []
+    if (deliveryType === 'delivery') {
+      if (floorDoor.trim()) detailLines.push(`Etage/dørnummer: ${floorDoor.trim()}`)
+      if (company.trim()) detailLines.push(`Firma: ${company.trim()}`)
+      if (contactPerson.trim()) {
+        detailLines.push(`Kontaktperson: ${contactPerson.trim()}${contactPhone.trim() ? ` (${contactPhone.trim()})` : ''}`)
+      }
+      if (remark.trim()) detailLines.push(`Bemærkning: ${remark.trim()}`)
+    }
+    const deliveryDetails = detailLines.length > 0 ? detailLines.join('\n') : null
+
     const { error: insertError } = await supabase.from('bookings').insert({
       user_id: user.id,
       tool_name: tool.name,
@@ -142,7 +194,8 @@ export default function BookingForm({ tool }) {
       end_date: endDate,
       price: totalPrice,
       delivery_type: deliveryType,
-      delivery_address: deliveryType === 'delivery' ? address : null,
+      delivery_address: fullAddress,
+      delivery_details: deliveryDetails,
     })
 
     if (insertError) {
@@ -205,37 +258,141 @@ export default function BookingForm({ tool }) {
       </div>
 
       {deliveryType === 'delivery' && (
-        <div className="field">
-          <label htmlFor="address">Din adresse</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              id="address"
-              ref={addressInputRef}
-              type="text"
-              placeholder="Begynd at skrive din adresse..."
-              value={address}
-              onChange={(e) => {
-                setAddress(e.target.value)
-                setDeliveryInfo(null)
-              }}
-              style={{ flex: 1 }}
-            />
-            <button
-              type="button"
-              className="btn-primary"
-              style={{ width: 'auto', padding: '10px 18px', marginTop: 0 }}
-              onClick={handleCheckDelivery}
-              disabled={checkingDelivery || !address}
-            >
-              {checkingDelivery ? 'Beregner…' : 'Beregn pris'}
-            </button>
+        <>
+          <div className="field">
+            <label htmlFor="street">Vejnavn og husnummer</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                id="street"
+                ref={streetInputRef}
+                type="text"
+                placeholder="F.eks. Tuevej 7"
+                value={street}
+                onChange={(e) => {
+                  setStreet(e.target.value)
+                  setDeliveryInfo(null)
+                }}
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: 'auto', padding: '10px 18px', marginTop: 0 }}
+                onClick={handleCheckDelivery}
+                disabled={checkingDelivery || !street || !postnr || !by}
+              >
+                {checkingDelivery ? 'Beregner…' : 'Beregn pris'}
+              </button>
+            </div>
           </div>
+
+          <div className="field" style={{ display: 'flex', gap: 8 }}>
+            <div style={{ width: 90 }}>
+              <label htmlFor="postnr">Postnr.</label>
+              <input
+                id="postnr"
+                type="text"
+                value={postnr}
+                onChange={(e) => {
+                  setPostnr(e.target.value)
+                  setDeliveryInfo(null)
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="by">By</label>
+              <input
+                id="by"
+                type="text"
+                value={by}
+                onChange={(e) => {
+                  setBy(e.target.value)
+                  setDeliveryInfo(null)
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="field">
+            <label htmlFor="floorDoor">
+              <i className="ti ti-door" style={{ verticalAlign: 'middle', marginRight: 4 }} />
+              Etage / dørnummer <span style={{ color: 'var(--text-muted)' }}>(valgfrit)</span>
+            </label>
+            <input
+              id="floorDoor"
+              type="text"
+              placeholder="F.eks. 2. th."
+              value={floorDoor}
+              onChange={(e) => setFloorDoor(e.target.value)}
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="company">
+              Firma <span style={{ color: 'var(--text-muted)' }}>(valgfrit)</span>
+            </label>
+            <input
+              id="company"
+              type="text"
+              placeholder="F.eks. Novo Nordisk"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
+          </div>
+
+          <div className="field" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ flex: '1 1 150px' }}>
+              <label htmlFor="contactPerson">
+                Kontaktperson <span style={{ color: 'var(--text-muted)' }}>(valgfrit)</span>
+              </label>
+              <input
+                id="contactPerson"
+                type="text"
+                placeholder="F.eks. Anne Jensen"
+                value={contactPerson}
+                onChange={(e) => setContactPerson(e.target.value)}
+              />
+            </div>
+            <div style={{ flex: '1 1 110px' }}>
+              <label htmlFor="contactPhone">Telefon</label>
+              <input
+                id="contactPhone"
+                type="tel"
+                placeholder={phoneMissing ? 'Angiv tlf.' : ''}
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                style={
+                  phoneMissing
+                    ? { borderColor: 'var(--border-danger)', color: 'var(--text-danger)' }
+                    : undefined
+                }
+              />
+            </div>
+          </div>
+
+          <div className="field">
+            <label htmlFor="remark">
+              Bemærkning til levering <span style={{ color: 'var(--text-muted)' }}>(valgfrit)</span>
+            </label>
+            <textarea
+              id="remark"
+              rows={3}
+              placeholder="F.eks. Ring på ved ankomst, hunden er i haven"
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+              style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: 'inherit', padding: '10px 12px' }}
+            />
+            <p className="sub" style={{ marginTop: 6 }}>
+              Bruges kun til at finde vej ved levering — vises ikke offentligt.
+            </p>
+          </div>
+
           {deliveryInfo && (
             <p className="sub" style={{ marginTop: 10 }}>
               {deliveryInfo.km} km — levering koster <strong>{deliveryInfo.price} kr</strong>
             </p>
           )}
-        </div>
+        </>
       )}
 
       {days > 0 && (

@@ -441,4 +441,9 @@ export default function BookingForm({ tool }) {
 
       {error && <div className="auth-message error">{error}</div>}
 
-      <button
+<button className="btn-primary" type="submit" disabled={loading}>
+        {loading ? 'Booker…' : 'Bekræft booking'}
+       </button>
+    </form>
+  )
+}

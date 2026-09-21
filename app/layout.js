@@ -32,4 +32,12 @@ export default async function RootLayout({ children }) {
             {user ? (
               <Link className="nav-link" href="/min-side">Min side</Link>
             ) : (
-              <Link
+              <Link className="nav-link" href="/login">Log ind</Link>
+            )}
+          </div>
+        </nav>
+        {children}
+      </body>
+    </html>
+  )
+}

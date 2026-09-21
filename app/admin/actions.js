@@ -185,3 +185,11 @@ export async function reactivateTool(toolId) {
   revalidatePath('/admin/arkiv')
   revalidatePath('/')
 }
+export async function confirmBookingReceived(bookingId) {
+  const supabase = await createClient()
+  await supabase
+    .from('bookings')
+    .update({ returned_at: new Date().toISOString() })
+    .eq('id', bookingId)
+  revalidatePath('/admin/bookinger')
+}

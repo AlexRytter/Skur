@@ -134,3 +134,54 @@ export async function setCustomerHold(customerId, shouldHold, reason) {
     .eq('id', customerId)
   revalidatePath('/admin/kunder')
 }
+
+export async function markToolSold(toolId, { customerId, note }) {
+  const supabase = await createClient()
+  await supabase
+    .from('tools')
+    .update({
+      status: 'solgt',
+      archived_at: new Date().toISOString(),
+      archived_reason: null,
+      sold_to_customer_id: customerId || null,
+      sold_to_note: note || null,
+    })
+    .eq('id', toolId)
+  revalidatePath('/admin/vaerktoj')
+  revalidatePath('/admin/arkiv')
+  revalidatePath('/')
+}
+
+export async function markToolDeleted(toolId, reason) {
+  const supabase = await createClient()
+  await supabase
+    .from('tools')
+    .update({
+      status: 'slettet',
+      archived_at: new Date().toISOString(),
+      archived_reason: reason || null,
+      sold_to_customer_id: null,
+      sold_to_note: null,
+    })
+    .eq('id', toolId)
+  revalidatePath('/admin/vaerktoj')
+  revalidatePath('/admin/arkiv')
+  revalidatePath('/')
+}
+
+export async function reactivateTool(toolId) {
+  const supabase = await createClient()
+  await supabase
+    .from('tools')
+    .update({
+      status: 'aktiv',
+      archived_at: null,
+      archived_reason: null,
+      sold_to_customer_id: null,
+      sold_to_note: null,
+    })
+    .eq('id', toolId)
+  revalidatePath('/admin/vaerktoj')
+  revalidatePath('/admin/arkiv')
+  revalidatePath('/')
+}

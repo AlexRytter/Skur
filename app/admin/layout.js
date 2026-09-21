@@ -24,6 +24,7 @@ export default async function AdminLayout({ children }) {
         <Link href="/admin/vaerktoj" className="nav-link" style={{ fontWeight: 500 }}>Værktøj</Link>
         <Link href="/admin/beskeder" className="nav-link" style={{ fontWeight: 500 }}>Beskeder</Link>
         <Link href="/admin/kunder" className="nav-link" style={{ fontWeight: 500 }}>Kunder</Link>
+        <Link href="/admin/bookinger" className="nav-link" style={{ fontWeight: 500 }}>Bookinger</Link>
         <Link href="/admin/arkiv" className="nav-link" style={{ fontWeight: 500 }}>Arkiv</Link>
       </div>
       {children}

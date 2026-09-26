@@ -15,11 +15,28 @@ export async function addTool(formData) {
 
 export async function updateTool(id, formData) {
   const supabase = await createClient()
+
+  const newPrice = Number(formData.get('price_per_day'))
+
+  const { data: current } = await supabase
+    .from('tools')
+    .select('price_per_day')
+    .eq('id', id)
+    .single()
+
+  if (current && Number(current.price_per_day) !== newPrice) {
+    await supabase.from('tool_price_history').insert({
+      tool_id: id,
+      old_value: current.price_per_day,
+      new_value: newPrice,
+    })
+  }
+
   await supabase
     .from('tools')
     .update({
       name: formData.get('name'),
-      price_per_day: Number(formData.get('price_per_day')),
+      price_per_day: newPrice,
     })
     .eq('id', id)
   revalidatePath('/admin')
@@ -164,72 +181,3 @@ export async function markToolDeleted(toolId, reason) {
       sold_to_note: null,
     })
     .eq('id', toolId)
-  revalidatePath('/admin/vaerktoj')
-  revalidatePath('/admin/arkiv')
-  revalidatePath('/')
-}
-
-export async function reactivateTool(toolId) {
-  const supabase = await createClient()
-  await supabase
-    .from('tools')
-    .update({
-      status: 'aktiv',
-      archived_at: null,
-      archived_reason: null,
-      sold_to_customer_id: null,
-      sold_to_note: null,
-    })
-    .eq('id', toolId)
-  revalidatePath('/admin/vaerktoj')
-  revalidatePath('/admin/arkiv')
-  revalidatePath('/')
-}
-export async function confirmBookingReceived(bookingId) {
-  const supabase = await createClient()
-  await supabase
-    .from('bookings')
-    .update({ returned_at: new Date().toISOString() })
-    .eq('id', bookingId)
-  revalidatePath('/admin/bookinger')
-}
-
-export async function updateDeliverySettings(formData) {
-  const supabase = await createClient()
-
-  const newBaseFee = Number(formData.get('base_fee'))
-  const newPricePerKm = Number(formData.get('price_per_km'))
-
-  const { data: current } = await supabase
-    .from('delivery_settings')
-    .select('*')
-    .eq('id', 1)
-    .single()
-
-  const historyEntries = []
-
-  if (current && Number(current.base_fee) !== newBaseFee) {
-    historyEntries.push({
-      field: 'base_fee',
-      old_value: current.base_fee,
-      new_value: newBaseFee,
-    })
-  }
-  if (current && Number(current.price_per_km) !== newPricePerKm) {
-    historyEntries.push({
-      field: 'price_per_km',
-      old_value: current.price_per_km,
-      new_value: newPricePerKm,
-    })
-  }
-
-  if (historyEntries.length > 0) {
-    await supabase.from('delivery_price_history').insert(historyEntries)
-  }
-
-  await supabase
-    .from('delivery_settings')
-    .upsert({ id: 1, base_fee: newBaseFee, price_per_km: newPricePerKm })
-
-  revalidatePath('/admin/vaerktoj')
-}

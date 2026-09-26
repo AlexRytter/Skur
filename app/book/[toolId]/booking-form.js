@@ -6,6 +6,19 @@ import { createClient } from '@/lib/supabase/client'
 import { calculateDeliveryPrice } from '@/app/lib/delivery'
 import AvailabilityCalendar from './availability-calendar'
 
+function toISODate(d) {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function addDays(dateStr, n) {
+  const d = new Date(dateStr)
+  d.setDate(d.getDate() + n)
+  return toISODate(d)
+}
+
 export default function BookingForm({ tool }) {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -157,16 +170,17 @@ export default function BookingForm({ tool }) {
 
     const { data: existingBookings } = await supabase
       .from('bookings')
-      .select('*')
+      .select('tool_unit_id, start_date, end_date, returned_at')
       .in('tool_unit_id', units.map((u) => u.id))
 
     const freeUnit = units.find((unit) => {
-      const overlapping = (existingBookings || []).filter(
-        (b) =>
-          b.tool_unit_id === unit.id &&
-          new Date(startDate) <= new Date(b.end_date) &&
-          new Date(endDate) >= new Date(b.start_date)
-      )
+      const overlapping = (existingBookings || []).filter((b) => {
+        if (b.tool_unit_id !== unit.id) return false
+        const returnedDate = b.returned_at ? toISODate(new Date(b.returned_at)) : null
+        const effectiveEnd = returnedDate && returnedDate < b.end_date ? returnedDate : b.end_date
+        const busyEnd = addDays(effectiveEnd, 1)
+        return startDate <= busyEnd && endDate >= b.start_date
+      })
       return overlapping.length === 0
     })
 
@@ -441,9 +455,9 @@ export default function BookingForm({ tool }) {
 
       {error && <div className="auth-message error">{error}</div>}
 
-<button className="btn-primary" type="submit" disabled={loading}>
+      <button className="btn-primary" type="submit" disabled={loading}>
         {loading ? 'Booker…' : 'Bekræft booking'}
-       </button>
+      </button>
     </form>
   )
 }

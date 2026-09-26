@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import PriceInput from '../price-input'
 import ToolArchiveActions from './tool-archive-actions'
 import DeliveryPriceHistory from '../delivery-price-history'
+import ToolPriceHistory from '../tool-price-history'
 import {
   addTool,
   updateTool,
@@ -66,6 +67,11 @@ export default async function VaerktojPage() {
     .order('changed_at', { ascending: false })
     .limit(10)
 
+  const { data: toolPriceHistory } = await supabase
+    .from('tool_price_history')
+    .select('*')
+    .order('changed_at', { ascending: false })
+
   return (
     <>
       <div className="section-title">Leveringspris</div>
@@ -123,6 +129,7 @@ export default async function VaerktojPage() {
         {tools && tools.length > 0 ? (
           tools.map((tool) => {
             const toolUnits = units ? units.filter((u) => u.tool_id === tool.id) : []
+            const thisToolHistory = toolPriceHistory ? toolPriceHistory.filter((h) => h.tool_id === tool.id) : []
 
             const earnings = bookings
               ? bookings
@@ -180,6 +187,8 @@ export default async function VaerktojPage() {
                     </span>
                   )}
                 </form>
+
+                <ToolPriceHistory history={thisToolHistory} />
 
                 <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#5f5e5a', flexWrap: 'wrap', alignItems: 'center' }}>
                   <span>Udlejet {rentCount} gange</span>
@@ -250,96 +259,3 @@ export default async function VaerktojPage() {
                     const status = getUnitStatus(unit, bookings)
                     return (
                       <div
-                        key={unit.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          flexWrap: 'wrap',
-                          background: '#fff',
-                          borderRadius: 8,
-                          padding: 8,
-                        }}
-                      >
-                        <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{unit.unit_code}</span>
-                        {unit.serial_number && <span style={{ fontSize: 12, color: '#5f5e5a' }}>SN: {unit.serial_number}</span>}
-                        {unit.purchase_price && (
-                          <span style={{ fontSize: 12, color: '#5f5e5a' }}>
-                            {Number(unit.purchase_price).toLocaleString('da-DK')} kr
-                          </span>
-                        )}
-
-                        <span className={`status-chip ${status.className}`}>{status.label}</span>
-
-                        <form
-                          action={async (formData) => {
-                            'use server'
-                            await updateToolUnitStatus(unit.id, formData.get('status'))
-                          }}
-                          style={{ display: 'flex', gap: 6, alignItems: 'center' }}
-                        >
-                          <select name="status" defaultValue={unit.status} style={{ padding: 6 }}>
-                            <option value="available">Automatisk (følger booking)</option>
-                            <option value="service">Til service</option>
-                            <option value="sold">Solgt</option>
-                          </select>
-                          <button type="submit" style={{ padding: '6px 10px', fontSize: 12 }}>
-                            Opdater
-                          </button>
-                        </form>
-
-                        <form
-                          action={async () => {
-                            'use server'
-                            await deleteToolUnit(unit.id)
-                          }}
-                        >
-                          <button type="submit" style={{ color: '#993c1d', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13 }}>
-                            Slet
-                          </button>
-                        </form>
-                      </div>
-                    )
-                  })}
-
-                  <form
-                    action={async (formData) => {
-                      'use server'
-                      await addToolUnit(tool.id, formData)
-                    }}
-                    style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}
-                  >
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Mærke</label>
-                      <input name="brand" defaultValue={tool.brand || ''} required placeholder="Hilti" style={{ display: 'block', padding: 8, width: 120 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Serienummer</label>
-                      <input name="serial_number" placeholder="fra værktøjet" style={{ display: 'block', padding: 8, width: 140 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Købsdato</label>
-                      <input type="date" name="purchase_date" style={{ display: 'block', padding: 8 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Købspris</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <PriceInput name="purchase_price" style={{ padding: 8, width: 100 }} />
-                        <span style={{ fontSize: 13, color: '#5f5e5a' }}>kr</span>
-                      </div>
-                    </div>
-                    <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '8px 14px' }}>
-                      Tilføj eksemplar
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )
-          })
-        ) : (
-          <div className="empty-state">Ingen værktøjer endnu.</div>
-        )}
-      </div>
-    </>
-  )
-}

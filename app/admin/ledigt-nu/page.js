@@ -51,6 +51,7 @@ export default async function LedigtNuPage() {
               key={tool.id}
               style={{
                 background: '#DCEFE0',
+                border: '1px solid #1C201B',
                 borderRadius: 10,
                 padding: '12px 16px',
                 display: 'flex',

@@ -6,6 +6,7 @@ export default async function Home() {
   const { data: tools } = await supabase
     .from('tools')
     .select('*')
+    .eq('status', 'aktiv')
     .order('price_per_day', { ascending: true })
 
   return (

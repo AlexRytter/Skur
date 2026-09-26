@@ -109,7 +109,7 @@ export default async function BookingerPage() {
                 </p>
 
                 {b.delivery_type === 'delivery' && (
-                  <div style={{ background: '#fff', borderRadius: 8, padding: 10, fontSize: 13, color: '#5f5e5a', marginBottom: 8 }}>
+                  <div style={{ background: '#fff', borderRadius: 8, padding: 10, fontSize: 13, color: '#5f5e5a', marginBottom: 8, overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                     <div>{b.delivery_address}</div>
                     {b.delivery_details &&
                       b.delivery_details.split('\n').map((line, i) => <div key={i}>{line}</div>)}

@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }) {
   }
 
   return (
-    <div className="page-wrap">
+    <div className="admin-wrap">
       <div className="page-head">
         <div>
           <h1>Admin</h1>

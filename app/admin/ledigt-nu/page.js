@@ -16,7 +16,7 @@ export default async function LedigtNuPage() {
 
   const { data: bookings } = await supabase
     .from('bookings')
-    .select('tool_unit_id, start_date, end_date')
+    .select('tool_unit_id, start_date, end_date, returned_at, cancelled_at')
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -24,6 +24,7 @@ export default async function LedigtNuPage() {
   const busyUnitIds = new Set(
     (bookings || [])
       .filter((b) => {
+        if (b.cancelled_at || b.returned_at) return false
         const start = new Date(b.start_date)
         const end = new Date(b.end_date)
         return start <= today && end >= today

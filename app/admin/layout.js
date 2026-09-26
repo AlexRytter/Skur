@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }) {
           <p>Styr værktøj og beskeder for Skur.</p>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, borderBottom: '1px solid #1C201B', paddingBottom: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, paddingBottom: 8, flexWrap: 'wrap' }}>
         <Link href="/admin/vaerktoj" className="nav-link" style={{ fontWeight: 500 }}>Værktøj</Link>
         <span style={{ color: '#9a917f' }}>-</span>
         <Link href="/admin/beskeder" className="nav-link" style={{ fontWeight: 500 }}>Beskeder</Link>

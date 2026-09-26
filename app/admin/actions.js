@@ -193,3 +193,43 @@ export async function confirmBookingReceived(bookingId) {
     .eq('id', bookingId)
   revalidatePath('/admin/bookinger')
 }
+
+export async function updateDeliverySettings(formData) {
+  const supabase = await createClient()
+
+  const newBaseFee = Number(formData.get('base_fee'))
+  const newPricePerKm = Number(formData.get('price_per_km'))
+
+  const { data: current } = await supabase
+    .from('delivery_settings')
+    .select('*')
+    .eq('id', 1)
+    .single()
+
+  const historyEntries = []
+
+  if (current && Number(current.base_fee) !== newBaseFee) {
+    historyEntries.push({
+      field: 'base_fee',
+      old_value: current.base_fee,
+      new_value: newBaseFee,
+    })
+  }
+  if (current && Number(current.price_per_km) !== newPricePerKm) {
+    historyEntries.push({
+      field: 'price_per_km',
+      old_value: current.price_per_km,
+      new_value: newPricePerKm,
+    })
+  }
+
+  if (historyEntries.length > 0) {
+    await supabase.from('delivery_price_history').insert(historyEntries)
+  }
+
+  await supabase
+    .from('delivery_settings')
+    .upsert({ id: 1, base_fee: newBaseFee, price_per_km: newPricePerKm })
+
+  revalidatePath('/admin/vaerktoj')
+}

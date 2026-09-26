@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
 :root {
   --paper: #EEEDE7;
@@ -175,3 +175,6 @@ h1, h2, h3 {
 .avail::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--skur-green); }
 .tool-card.unavailable .avail::before { background: var(--ink-soft); }
 @media (max-width: 900px) { .tool-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* --- Admin: bredere layout --- */
+.admin-wrap { max-width: 1120px; margin: 0 auto; padding: 60px 24px; }

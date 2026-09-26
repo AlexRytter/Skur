@@ -7,7 +7,10 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })
 }
 
-function getStatus(startDate, endDate) {
+function getStatus(startDate, endDate, returnedAt) {
+  if (returnedAt) {
+    return { label: 'Afsluttet', className: 'done' }
+  }
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const start = new Date(startDate)
@@ -54,7 +57,7 @@ export default async function MinSide({ searchParams }) {
       {bookings && bookings.length > 0 ? (
         <div className="booking-list" style={{ marginBottom: 48 }}>
           {bookings.map((b) => {
-            const status = getStatus(b.start_date, b.end_date)
+            const status = getStatus(b.start_date, b.end_date, b.returned_at)
             const showReturnButton =
               (status.className === 'active' || status.className === 'done') && !b.customer_returned_at && !b.returned_at
 
@@ -170,6 +173,3 @@ export default async function MinSide({ searchParams }) {
       ) : (
         <div className="empty-state">Du har ikke sendt nogen beskeder endnu.</div>
       )}
-    </div>
-  )
-}

@@ -17,6 +17,7 @@ export default async function BeskederPage() {
             key={msg.id}
             style={{
               background: '#f4efe6',
+              border: '1px solid #1C201B',
               borderRadius: 10,
               padding: 16,
               display: 'flex',

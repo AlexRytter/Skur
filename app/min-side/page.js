@@ -1,13 +1,17 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import LogoutButton from './logout-button'
+import CancelButton from './cancel-button'
 import { sendMessage, markBookingReturned } from '../actions'
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })
 }
 
-function getStatus(startDate, endDate, returnedAt) {
+function getStatus(startDate, endDate, returnedAt, cancelledAt) {
+  if (cancelledAt) {
+    return { label: 'Annulleret', className: 'cancelled' }
+  }
   if (returnedAt) {
     return { label: 'Afsluttet', className: 'done' }
   }
@@ -57,9 +61,10 @@ export default async function MinSide({ searchParams }) {
       {bookings && bookings.length > 0 ? (
         <div className="booking-list" style={{ marginBottom: 48 }}>
           {bookings.map((b) => {
-            const status = getStatus(b.start_date, b.end_date, b.returned_at)
+            const status = getStatus(b.start_date, b.end_date, b.returned_at, b.cancelled_at)
             const showReturnButton =
-              (status.className === 'active' || status.className === 'done') && !b.customer_returned_at && !b.returned_at
+              (status.className === 'active' || status.className === 'done') && !b.customer_returned_at && !b.returned_at && !b.cancelled_at
+            const showCancelButton = status.className === 'upcoming' && !b.cancelled_at
 
             return (
               <div key={b.id}>
@@ -75,6 +80,12 @@ export default async function MinSide({ searchParams }) {
                   <div className="row-price">{b.price} kr</div>
                 </div>
 
+                {showCancelButton && (
+                  <div style={{ marginTop: -8, marginBottom: 16, paddingLeft: 2 }}>
+                    <CancelButton bookingId={b.id} />
+                  </div>
+                )}
+
                 {showReturnButton && (
                   <form
                     action={async () => {
@@ -89,13 +100,19 @@ export default async function MinSide({ searchParams }) {
                   </form>
                 )}
 
-                {b.customer_returned_at && !b.returned_at && (
+                {b.cancelled_at && (
+                  <div className="sub" style={{ marginTop: -8, marginBottom: 16, paddingLeft: 2, color: '#7a7266', fontStyle: 'italic' }}>
+                    Du annullerede denne leje {formatDate(b.cancelled_at)}.
+                  </div>
+                )}
+
+                {!b.cancelled_at && b.customer_returned_at && !b.returned_at && (
                   <div className="sub" style={{ marginTop: -8, marginBottom: 16, paddingLeft: 2, color: '#3b6d11' }}>
                     Du har markeret denne som afleveret — afventer bekræftelse fra Skur.
                   </div>
                 )}
 
-                {b.returned_at && (
+                {!b.cancelled_at && b.returned_at && (
                   <div className="sub" style={{ marginTop: -8, marginBottom: 16, paddingLeft: 2, color: '#3b6d11' }}>
                     Afleveret og modtaget af Skur.
                   </div>

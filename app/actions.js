@@ -34,3 +34,31 @@ export async function markBookingReturned(bookingId) {
 
   revalidatePath('/min-side')
 }
+
+export async function cancelBooking(bookingId) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return
+
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('start_date, user_id, cancelled_at, returned_at')
+    .eq('id', bookingId)
+    .single()
+
+  if (!booking || booking.user_id !== user.id) return
+  if (booking.cancelled_at || booking.returned_at) return
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  if (new Date(booking.start_date) <= today) return
+
+  await supabase
+    .from('bookings')
+    .update({ cancelled_at: new Date().toISOString() })
+    .eq('id', bookingId)
+    .eq('user_id', user.id)
+
+  revalidatePath('/min-side')
+}

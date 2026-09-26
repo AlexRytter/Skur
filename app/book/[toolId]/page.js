@@ -18,7 +18,7 @@ export default async function BookTool({ params }) {
     .eq('id', toolId)
     .single()
 
-  if (!tool) {
+  if (!tool || tool.status !== 'aktiv') {
     notFound()
   }
 

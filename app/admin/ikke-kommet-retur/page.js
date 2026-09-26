@@ -39,7 +39,7 @@ export default async function IkkeKommetReturPage() {
                 key={b.id}
                 style={{
                   background: '#FBEAEA',
-                  border: '1px solid #EFC6BC',
+                  border: '1px solid #1C201B',
                   borderRadius: 10,
                   padding: '12px 16px',
                   display: 'flex',

@@ -109,14 +109,17 @@ export default async function VaerktojPage() {
       </div>
 
       {priceHistory && priceHistory.length > 0 && (
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>Prishistorik</div>
+        <details style={{ marginBottom: 32 }}>
+          <summary style={{ fontSize: 13, fontWeight: 500, marginBottom: 8, cursor: 'pointer' }}>
+            Prishistorik
+          </summary>
           <div
             style={{
               background: '#f4efe6',
               border: '1px solid #1C201B',
               borderRadius: 10,
               padding: '4px 20px',
+              marginTop: 8,
             }}
           >
             {priceHistory.map((entry, i) => (
@@ -142,7 +145,7 @@ export default async function VaerktojPage() {
               </div>
             ))}
           </div>
-        </div>
+        </details>
       )}
 
       <div className="section-title">Tilføj nyt værktøj</div>
@@ -355,31 +358,4 @@ export default async function VaerktojPage() {
                     </div>
                     <div>
                       <label style={{ fontSize: 12, color: '#5f5e5a' }}>Serienummer</label>
-                      <input name="serial_number" placeholder="fra værktøjet" style={{ display: 'block', padding: 8, width: 140 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Købsdato</label>
-                      <input type="date" name="purchase_date" style={{ display: 'block', padding: 8 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Købspris</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <PriceInput name="purchase_price" style={{ padding: 8, width: 100 }} />
-                        <span style={{ fontSize: 13, color: '#5f5e5a' }}>kr</span>
-                      </div>
-                    </div>
-                    <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '8px 14px' }}>
-                      Tilføj eksemplar
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )
-          })
-        ) : (
-          <div className="empty-state">Ingen værktøjer endnu.</div>
-        )}
-      </div>
-    </>
-  )
-}
+                      <input name="serial_number"

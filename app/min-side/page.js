@@ -102,7 +102,7 @@ export default async function MinSide({ searchParams }) {
 
                 {b.cancelled_at && (
                   <div className="sub" style={{ marginTop: -8, marginBottom: 16, paddingLeft: 2, color: '#7a7266', fontStyle: 'italic' }}>
-                    Du annullerede denne leje {formatDate(b.cancelled_at)}.
+                    Du annullerede denne leje {formatDate(b.cancelled_at)}
                   </div>
                 )}
 

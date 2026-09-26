@@ -1,6 +1,24 @@
 import { createClient } from '@/lib/supabase/server'
 import { confirmBookingReceived } from '../actions'
 
+function getStatusBadge(b, today) {
+  if (b.cancelled_at) {
+    return { label: 'Annulleret', background: '#EDEAE2', color: '#857c68' }
+  }
+  if (b.returned_at) {
+    return { label: 'Afsluttet', background: '#E7E2D6', color: '#6b6559' }
+  }
+  const end = new Date(b.end_date)
+  if (end < today) {
+    return { label: 'Overskredet', background: '#F6D9D3', color: '#8b3a1e' }
+  }
+  const start = new Date(b.start_date)
+  if (today < start) {
+    return { label: 'Kommer op', background: '#F6E4B8', color: '#7A5A12' }
+  }
+  return { label: 'Udlejet nu', background: '#FBDFC0', color: '#8a4b12' }
+}
+
 export default async function BookingerPage() {
   const supabase = await createClient()
 
@@ -24,7 +42,8 @@ export default async function BookingerPage() {
         {bookings && bookings.length > 0 ? (
           bookings.map((b) => {
             const customer = (customers || []).find((c) => c.id === b.user_id)
-            const isOverdue = new Date(b.end_date) < today && !b.returned_at
+            const isOverdue = new Date(b.end_date) < today && !b.returned_at && !b.cancelled_at
+            const status = getStatusBadge(b, today)
 
             return (
               <div
@@ -34,6 +53,7 @@ export default async function BookingerPage() {
                   borderRadius: 10,
                   padding: 16,
                   border: '1px solid #1C201B',
+                  opacity: b.cancelled_at ? 0.6 : 1,
                 }}
               >
                 {isOverdue && (
@@ -54,22 +74,30 @@ export default async function BookingerPage() {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                  <span style={{ fontWeight: 500 }}>{b.tool_name}</span>
-                  <span
-                    title={
-                      b.delivery_type === 'delivery'
-                        ? 'Værktøjet skal leveres til kundens adresse.'
-                        : 'Kunden henter selv værktøjet på Tuevej 7.'
-                    }
-                    className="status-chip"
-                    style={
-                      b.delivery_type === 'delivery'
-                        ? { background: '#e6f1fb', color: '#0c447c', cursor: 'help' }
-                        : { background: '#eaf3de', color: '#173404', cursor: 'help' }
-                    }
-                  >
-                    {b.delivery_type === 'delivery' ? 'Levering' : 'Afhentning'}
-                  </span>
+                  <span style={{ fontWeight: 500, textDecoration: b.cancelled_at ? 'line-through' : 'none' }}>{b.tool_name}</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <span
+                      className="status-chip"
+                      style={{ background: status.background, color: status.color }}
+                    >
+                      {status.label}
+                    </span>
+                    <span
+                      title={
+                        b.delivery_type === 'delivery'
+                          ? 'Værktøjet skal leveres til kundens adresse.'
+                          : 'Kunden henter selv værktøjet på Tuevej 7.'
+                      }
+                      className="status-chip"
+                      style={
+                        b.delivery_type === 'delivery'
+                          ? { background: '#e6f1fb', color: '#0c447c', cursor: 'help' }
+                          : { background: '#eaf3de', color: '#173404', cursor: 'help' }
+                      }
+                    >
+                      {b.delivery_type === 'delivery' ? 'Levering' : 'Afhentning'}
+                    </span>
+                  </div>
                 </div>
 
                 <p style={{ fontSize: 13, color: '#5f5e5a', margin: '4px 0' }}>
@@ -89,12 +117,17 @@ export default async function BookingerPage() {
                 )}
 
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', fontSize: 13 }}>
-                  {b.customer_returned_at && (
+                  {b.customer_returned_at && !b.returned_at && !b.cancelled_at && (
                     <span style={{ color: '#3b6d11' }}>
                       Kunden markerede afleveret {new Date(b.customer_returned_at).toLocaleDateString('da-DK')}
                     </span>
                   )}
-                  {b.returned_at ? (
+
+                  {b.cancelled_at ? (
+                    <span style={{ color: '#857c68', fontStyle: 'italic' }}>
+                      Annulleret af kunden {new Date(b.cancelled_at).toLocaleDateString('da-DK')}
+                    </span>
+                  ) : b.returned_at ? (
                     <span style={{ color: '#3b6d11', fontWeight: 500 }}>
                       Bekræftet modtaget {new Date(b.returned_at).toLocaleDateString('da-DK')}
                     </span>

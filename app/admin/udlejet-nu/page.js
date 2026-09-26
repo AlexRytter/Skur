@@ -37,7 +37,7 @@ export default async function UdlejetNuPage() {
                 key={b.id}
                 style={{
                   background: '#FBF8F2',
-                  border: '1px solid #E2DACB',
+                  border: '1px solid #1C201B',
                   borderRadius: 10,
                   padding: '12px 16px',
                   display: 'flex',

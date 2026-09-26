@@ -9,6 +9,7 @@ import {
   addToolUnit,
   deleteToolUnit,
   updateToolUnitStatus,
+  updateDeliverySettings,
 } from '../actions'
 
 function getUnitStatus(unit, bookings) {
@@ -27,6 +28,12 @@ function getUnitStatus(unit, bookings) {
 
   if (activeBooking) return { label: 'Udlejet', className: 'unavailable' }
   return { label: 'Ledig', className: 'active' }
+}
+
+function formatFieldName(field) {
+  if (field === 'base_fee') return 'Grundgebyr'
+  if (field === 'price_per_km') return 'Pris pr. km'
+  return field
 }
 
 export default async function VaerktojPage() {
@@ -52,8 +59,92 @@ export default async function VaerktojPage() {
     .select('id, full_name, phone')
     .order('full_name', { ascending: true })
 
+  const { data: deliverySettings } = await supabase
+    .from('delivery_settings')
+    .select('*')
+    .eq('id', 1)
+    .single()
+
+  const { data: priceHistory } = await supabase
+    .from('delivery_price_history')
+    .select('*')
+    .order('changed_at', { ascending: false })
+    .limit(10)
+
   return (
     <>
+      <div className="section-title">Leveringspris</div>
+      <p className="sub" style={{ marginBottom: 12 }}>Grundgebyr + pris pr. km, brugt til at beregne levering til kunder.</p>
+      <div
+        style={{
+          background: '#f4efe6',
+          border: '1px solid #1C201B',
+          borderRadius: 10,
+          padding: 20,
+          marginBottom: 16,
+        }}
+      >
+        <form
+          action={updateDeliverySettings}
+          style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}
+        >
+          <div>
+            <label style={{ fontSize: 12, color: '#5f5e5a' }}>Grundgebyr</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <PriceInput name="base_fee" defaultValue={deliverySettings?.base_fee ?? 50} style={{ width: 100, padding: 8 }} />
+              <span style={{ fontSize: 13, color: '#5f5e5a' }}>kr</span>
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: '#5f5e5a' }}>Pris pr. km</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <PriceInput name="price_per_km" defaultValue={deliverySettings?.price_per_km ?? 2.5} style={{ width: 100, padding: 8 }} />
+              <span style={{ fontSize: 13, color: '#5f5e5a' }}>kr</span>
+            </div>
+          </div>
+          <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '8px 18px' }}>
+            Gem
+          </button>
+        </form>
+      </div>
+
+      {priceHistory && priceHistory.length > 0 && (
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>Prishistorik</div>
+          <div
+            style={{
+              background: '#f4efe6',
+              border: '1px solid #1C201B',
+              borderRadius: 10,
+              padding: '4px 20px',
+            }}
+          >
+            {priceHistory.map((entry, i) => (
+              <div
+                key={entry.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px 0',
+                  borderTop: i === 0 ? 'none' : '1px solid rgba(28,32,27,0.1)',
+                  fontSize: 13,
+                  flexWrap: 'wrap',
+                  gap: 6,
+                }}
+              >
+                <span>
+                  {formatFieldName(entry.field)}: {Number(entry.old_value).toLocaleString('da-DK')} kr → <strong>{Number(entry.new_value).toLocaleString('da-DK')} kr</strong>
+                </span>
+                <span style={{ fontSize: 12, color: '#857c68', whiteSpace: 'nowrap' }}>
+                  {new Date(entry.changed_at).toLocaleDateString('da-DK')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="section-title">Tilføj nyt værktøj</div>
       <form action={addTool} style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
         <input name="name" placeholder="Navn (fx Boremaskine)" required style={{ flex: 1, minWidth: 160, padding: 10 }} />

@@ -173,3 +173,6 @@ export default async function MinSide({ searchParams }) {
       ) : (
         <div className="empty-state">Du har ikke sendt nogen beskeder endnu.</div>
       )}
+    </div>
+  )
+}

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PriceInput from '../price-input'
 import ToolArchiveActions from './tool-archive-actions'
+import DeliveryPriceHistory from '../delivery-price-history'
 import {
   addTool,
   updateTool,
@@ -28,12 +29,6 @@ function getUnitStatus(unit, bookings) {
 
   if (activeBooking) return { label: 'Udlejet', className: 'unavailable' }
   return { label: 'Ledig', className: 'active' }
-}
-
-function formatFieldName(field) {
-  if (field === 'base_fee') return 'Grundgebyr'
-  if (field === 'price_per_km') return 'Pris pr. km'
-  return field
 }
 
 export default async function VaerktojPage() {
@@ -108,45 +103,7 @@ export default async function VaerktojPage() {
         </form>
       </div>
 
-      {priceHistory && priceHistory.length > 0 && (
-        <details style={{ marginBottom: 32 }}>
-          <summary style={{ fontSize: 13, fontWeight: 500, marginBottom: 8, cursor: 'pointer' }}>
-            Prishistorik
-          </summary>
-          <div
-            style={{
-              background: '#f4efe6',
-              border: '1px solid #1C201B',
-              borderRadius: 10,
-              padding: '4px 20px',
-              marginTop: 8,
-            }}
-          >
-            {priceHistory.map((entry, i) => (
-              <div
-                key={entry.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 0',
-                  borderTop: i === 0 ? 'none' : '1px solid rgba(28,32,27,0.1)',
-                  fontSize: 13,
-                  flexWrap: 'wrap',
-                  gap: 6,
-                }}
-              >
-                <span>
-                  {formatFieldName(entry.field)}: {Number(entry.old_value).toLocaleString('da-DK')} kr → <strong>{Number(entry.new_value).toLocaleString('da-DK')} kr</strong>
-                </span>
-                <span style={{ fontSize: 12, color: '#857c68', whiteSpace: 'nowrap' }}>
-                  {new Date(entry.changed_at).toLocaleDateString('da-DK')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
+      <DeliveryPriceHistory history={priceHistory} />
 
       <div className="section-title">Tilføj nyt værktøj</div>
       <form action={addTool} style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
@@ -298,64 +255,3 @@ export default async function VaerktojPage() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 10,
-                          flexWrap: 'wrap',
-                          background: '#fff',
-                          borderRadius: 8,
-                          padding: 8,
-                        }}
-                      >
-                        <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{unit.unit_code}</span>
-                        {unit.serial_number && <span style={{ fontSize: 12, color: '#5f5e5a' }}>SN: {unit.serial_number}</span>}
-                        {unit.purchase_price && (
-                          <span style={{ fontSize: 12, color: '#5f5e5a' }}>
-                            {Number(unit.purchase_price).toLocaleString('da-DK')} kr
-                          </span>
-                        )}
-
-                        <span className={`status-chip ${status.className}`}>{status.label}</span>
-
-                        <form
-                          action={async (formData) => {
-                            'use server'
-                            await updateToolUnitStatus(unit.id, formData.get('status'))
-                          }}
-                          style={{ display: 'flex', gap: 6, alignItems: 'center' }}
-                        >
-                          <select name="status" defaultValue={unit.status} style={{ padding: 6 }}>
-                            <option value="available">Automatisk (følger booking)</option>
-                            <option value="service">Til service</option>
-                            <option value="sold">Solgt</option>
-                          </select>
-                          <button type="submit" style={{ padding: '6px 10px', fontSize: 12 }}>
-                            Opdater
-                          </button>
-                        </form>
-
-                        <form
-                          action={async () => {
-                            'use server'
-                            await deleteToolUnit(unit.id)
-                          }}
-                        >
-                          <button type="submit" style={{ color: '#993c1d', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13 }}>
-                            Slet
-                          </button>
-                        </form>
-                      </div>
-                    )
-                  })}
-
-                  <form
-                    action={async (formData) => {
-                      'use server'
-                      await addToolUnit(tool.id, formData)
-                    }}
-                    style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}
-                  >
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Mærke</label>
-                      <input name="brand" defaultValue={tool.brand || ''} required placeholder="Hilti" style={{ display: 'block', padding: 8, width: 120 }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, color: '#5f5e5a' }}>Serienummer</label>
-                      <input name="serial_number"

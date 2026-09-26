@@ -5,20 +5,17 @@ import { useState } from 'react'
 export default function PriceInput({ name, defaultValue = '', placeholder = '0', style }) {
   const [display, setDisplay] = useState(
     defaultValue !== '' && defaultValue !== null && defaultValue !== undefined
-      ? Number(defaultValue).toLocaleString('da-DK', { maximumFractionDigits: 2 })
+      ? String(defaultValue)
       : ''
   )
 
   function handleChange(e) {
-    const raw = e.target.value.replace(/[^0-9,]/g, '')
+    let raw = e.target.value.replace(/[^0-9.]/g, '')
+    const parts = raw.split('.')
+    if (parts.length > 2) {
+      raw = parts[0] + '.' + parts.slice(1).join('')
+    }
     setDisplay(raw)
-  }
-
-  function getNumericValue() {
-    if (!display) return ''
-    const normalized = display.replace(/\./g, '').replace(',', '.')
-    const num = parseFloat(normalized)
-    return isNaN(num) ? '' : num
   }
 
   return (
@@ -32,7 +29,7 @@ export default function PriceInput({ name, defaultValue = '', placeholder = '0',
         autoComplete="off"
         style={style}
       />
-      <input type="hidden" name={name} value={getNumericValue()} />
+      <input type="hidden" name={name} value={display} />
     </>
   )
 }

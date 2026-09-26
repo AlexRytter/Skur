@@ -38,7 +38,7 @@ export default function AvailabilityCalendar({ toolId, startDate, endDate, onCha
       if (unitIds.length > 0) {
         const { data } = await supabase
           .from('bookings')
-          .select('tool_unit_id, start_date, end_date')
+          .select('tool_unit_id, start_date, end_date, returned_at')
           .in('tool_unit_id', unitIds)
         bookingData = data || []
       }
@@ -55,7 +55,11 @@ export default function AvailabilityCalendar({ toolId, startDate, endDate, onCha
     for (const unit of units) {
       map[unit.id] = bookings
         .filter((b) => b.tool_unit_id === unit.id)
-        .map((b) => ({ start: b.start_date, end: addDays(b.end_date, 1) }))
+        .map((b) => {
+          const returnedDate = b.returned_at ? toISODate(new Date(b.returned_at)) : null
+          const effectiveEnd = returnedDate && returnedDate < b.end_date ? returnedDate : b.end_date
+          return { start: b.start_date, end: addDays(effectiveEnd, 1) }
+        })
     }
     return map
   }, [units, bookings])
